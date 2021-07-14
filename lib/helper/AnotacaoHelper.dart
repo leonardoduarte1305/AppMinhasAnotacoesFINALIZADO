@@ -1,22 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:notasdiarias/model/Anotacao.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class AnotacaoHelper {
+  static final String nomeDaTabela = "anotacao";
+  static final String colunaId = "id";
+  static final String colunaTitulo = "titulo";
+  static final String colunaDescricao = "descricao";
+  static final String colunaData = "data";
+
   static final AnotacaoHelper _anotacaoHelper = AnotacaoHelper._internal();
-  late Database _db;
+  Database? _db;
 
   factory AnotacaoHelper() {
     return _anotacaoHelper;
   }
 
-  AnotacaoHelper._internal() {}
+  AnotacaoHelper._internal();
 
   get db async {
     if (_db != null) {
       return _db;
     } else {
-      _db = inicializarDB();
+      _db = await inicializarDB();
+      return _db;
     }
   }
 
@@ -38,24 +45,28 @@ class AnotacaoHelper {
         "data DATETIME)";
     await db.execute(sql);
   }
-}
 
-/*
-class Normal {
-  Normal() {}
-}
-
-class Singleton {
-  static final Singleton _singleton = Singleton._internal();
-
-  factory Singleton() {
-    print("Singleton");
-    return _singleton;
+  Future<int> salvarAnotacao(Anotacao anotacao) async {
+    var bancoDeDados = await db; // Não está usando o _db, e sim o get do db
+    int resultadoId = await bancoDeDados.insert(nomeDaTabela, anotacao.toMap());
+    return resultadoId;
   }
 
-  Singleton._internal() {
-    print("_internal");
+  recuperarTodas() async {
+    var bancoDeDados = await db; // Não está usando o _db, e sim o get do db
+    String sql = "SELECT * FROM ${nomeDaTabela} ORDER BY ${colunaData} DESC";
+    return await bancoDeDados.rawQuery(sql);
   }
 
+  Future<int> atualizarAnotacao(Anotacao anotacaoSelecionada) async {
+    var bancoDeDados = await db; // Não está usando o _db, e sim o get do db
+    return await bancoDeDados.update(nomeDaTabela, anotacaoSelecionada.toMap(),
+        where: "id = ?", whereArgs: [anotacaoSelecionada.id]);
+  }
+
+  excluirItem(int id) async {
+    var bancoDeDados = await db; // Não está usando o _db, e sim o get do db
+    return await bancoDeDados
+        .delete(nomeDaTabela, where: "id = ?", whereArgs: [id]);
+  }
 }
-*/
